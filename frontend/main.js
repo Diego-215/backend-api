@@ -13,7 +13,7 @@ async function obtenerProductos (){
         mostrarProductos(data.resultado);
         mensaje.textContent = '';
     }catch(error){
-        console.log('ERROR', error);
+        console.log('ERROR', error)
     }
 }
 

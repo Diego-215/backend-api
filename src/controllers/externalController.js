@@ -2,6 +2,7 @@ const { request, response, json } = require('express');
 const pool = require('../config/db');
 
 
+
 const poblarProductos = async (request, response) => {
     try {
         // Fetch FakeStoreApi
@@ -153,7 +154,7 @@ const buscarTabla = async (request, response) => {
 const obtenerTodos = async (request, response) => {
     try {
         const resultado = await pool.query(
-            `SELECT p.nombre, p.descripcion, c.nombre AS categoria, p.precio,
+            `SELECT p.nombre, p.descripcion, p.imagen_url, c.nombre AS categoria, p.precio,
                 p.stock FROM productos p LEFT JOIN categoria c ON p.id_categoria = c.id`
         );
 
@@ -166,6 +167,46 @@ const obtenerTodos = async (request, response) => {
     }
 };
 
+const crearProducto = async (request, response) => {
+  const { nombre, precio, stock, descripcion, imagen_url, id_categoria, youtube_id } = request.body;
+
+  try {
+
+    if (!nombre || !precio || !stock || !id_categoria) {
+      return response.status(400).json({
+        error: "Faltan campos obligatorios"
+      });
+    }
+
+    const categoriaExiste = await pool.query(
+      "SELECT id FROM categoria WHERE id = $1",
+      [id_categoria]
+    );
+
+    if (categoriaExiste.rows.length === 0) {
+      return response.status(400).json({
+        error: "La categoría no existe"
+      });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO productos 
+       (nombre, precio, stock, descripcion, imagen_url, id_categoria, youtube_id) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
+       RETURNING id`,
+      [nombre, precio, stock, descripcion, imagen_url, id_categoria, youtube_id]
+    );
+
+    response.status(201).json({
+      message: "Producto creado correctamente",
+      id: result.rows[0].id
+    });
+
+  } catch (error) {
+    response.status(500).json({ error: error.message });
+  }
+};
 
 
-module.exports = { poblarProductos, poblarCategorias, buscarA, buscarCategoria, buscarTabla, obtenerTodos};
+
+module.exports = { poblarProductos, poblarCategorias, buscarA, buscarCategoria, buscarTabla, obtenerTodos, crearProducto};
